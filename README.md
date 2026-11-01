@@ -113,3 +113,6 @@ A standalone bot that manages server access and member verification using the of
 │   └── verify_bot.py             # Discord verification bot (Python)
 ├── .env.example                  # Template for required environment variables
 └── README.md
+```
+
+LinkedIn: https://www.linkedin.com/in/maxim-kolosov-92b526406/
