@@ -1,87 +1,89 @@
 # Clan Operations & Analytics Automation Tool
 
-An Excel/VBA operations tool and Python Discord bot originally built to manage logistics, performance tracking, reporting, and server administration for a 50+ member Clash of Clans group.
+**Excel/VBA + Python automation that replaced repetitive manual coordination for a 50+ member online community.**
 
-The project started as a way to reduce repetitive manual coordination work and evolved into a structured internal operations system. It handles roster assignments, event-based performance tracking, clean public report generation, webhook-based Discord notifications, and automated server verification.
+I built this to solve a real workflow problem: running a large, active Clash of Clans group meant hours of copy-pasting assignments, hand-checking qualification rules, cleaning reports, and manually verifying new Discord members. Over several months I turned that process into a small internal operations system spanning Excel, VBA, REST APIs, and a Python Discord bot.
 
-This is a personal project. It is not affiliated with Supercell or Discord.
+> Personal project. Not affiliated with Supercell or Discord.
+
+**Skills demonstrated:** process automation · VBA · Python (`asyncio`) · REST API integration · webhook messaging · data transformation (ETL) · error handling · secrets management
 
 ---
 
 ## The Problem
 
-Managing a large active group manually created several recurring friction points:
+Managing the group manually created recurring friction:
 
-- Assignments had to be copied and updated by hand every cycle.
-- Member performance had to be tracked manually across multiple events.
-- Qualification rules had to be checked by eye, which was slow and error-prone.
-- Public reports had to be cleaned before sharing to hide internal admin notes and formulas.
-- Discord notifications had to be drafted and sent manually without spamming the channel.
-- Verifying new members and keeping Discord nicknames synchronized with in-game names had to be done manually by moderators.
+- Assignments were copied and updated by hand every cycle.
+- Member performance was tracked by hand across multiple events.
+- Qualification rules were checked by eye, which was slow and error-prone.
+- Public reports needed manual cleanup to hide admin notes and formulas.
+- Discord announcements were drafted and sent by hand, with a risk of spamming the channel.
+- New members had to be manually asked to provide their in-game username, which took time and was unsafe.
 
-When the roster changed frequently, this manual process became slow and easy to mess up.
-
----
+As the roster changed week to week, this became slow and easy to get wrong.
 
 ## The Solution
 
-The system centralizes operational data and automates the most repetitive steps across both Excel and Discord. A typical cycle looks like this:
+The system centralizes operational data and automates each repetitive step. A typical cycle:
 
-1. Update the active roster or event data.
+1. Update the roster or event data.
 2. Run the assignment generator.
 3. Review generated assignments and performance flags.
 4. Generate a clean public report.
-5. Send grouped Discord notifications through the webhook tool.
-6. Allow new members to verify their accounts via the Discord bot.
+5. Send grouped Discord notifications via webhook.
+6. New members self-verify through the Discord bot, with no moderator needed.
 
-The goal is not to remove human decision-making. It is to remove repetitive copy-paste, manual formatting, and administrative overhead so that decisions and community management can happen faster.
+The goal isn't to remove human judgment. It's to remove copy-paste, manual formatting, and admin overhead so decisions can happen faster.
 
 ---
 
 ## Core Features
 
-### 1. Assignment Automation
-Generates assignments across the active roster based on the selected timeframe and operator input.
-- Bulk assignment generation with a single run
-- Unicode names and special character support
-- Variable roster sizes without restructuring
-- Reusable worksheet structure
-- Default assignment population based on user prompts
+### 1. Assignment Automation (VBA)
+- Bulk assignment generation in a single run
+- Handles Unicode names and special characters
+- Supports variable roster sizes without restructuring the workbook
+- Reusable worksheet structure with prompt-driven defaults
 
-### 2. Performance Tracking
-Tracks participation and performance across events.
+### 2. Performance Tracking (Excel + VBA)
 - Dynamic arrays (`UNIQUE`, `FILTER`) for roster deduplication and filtering
-- `XLOOKUP` for matching roster entries to historical records
+- `XLOOKUP` to match roster entries to historical records
 - `COUNTIFS` for participation and performance metrics
-- Rule-based logic for qualification or status changes
+- Rule-based logic that automatically flags members who meet qualification conditions across multiple events
 
-If a member meets a defined set of performance conditions across multiple events, the tool flags or indexes them as qualified automatically.
+### 3. Public Report Generation (VBA)
+- Duplicates reporting sheets into a new workbook
+- Converts formulas to static values
+- Hides admin columns and removes unused tabs
+- Keeps internal logic and notes separate from what gets shared
 
-### 3. Public Report Generation
-Exports a clean public-facing version of the internal workbook.
-- Duplicates active reporting sheets into a new workbook
-- Converts formula-driven output into static values where appropriate
-- Hides administrative columns
-- Removes unused tabs
-- Produces a clean file suitable for sharing
-
-This keeps internal logic and admin-only fields separate from the public report.
-
-### 4. Discord Webhook Notifications
-Sends structured messages to Discord using webhook requests.
-- JSON payload formatting
-- Grouped assignment notifications
-- Priority-based ordering
+### 4. Discord Webhook Notifications (VBA)
+- JSON payload construction and HTTP requests
+- Grouped, priority-ordered assignment messages
 - Batched mentions to avoid flooding the channel
 - Delays between requests to respect rate limits
-- Optional scheduled follow-up messages
+- Optional scheduled follow-ups
 
 ### 5. Discord Verification Bot (Python)
-A standalone bot that manages server access and member verification using the official Clash of Clans API.
-- Uses Discord UI components (Buttons and Modals) for a streamlined verification flow.
-- Validates player ownership by requiring users to generate and submit a temporary in-game API token.
-- Automatically assigns a verified role and updates the member's server nickname to their current in-game name.
-- Handles API rate limits, HTTP errors, and Discord permission boundaries gracefully.
+A standalone bot (`bot/verify_bot.py`) that verifies players against the official Clash of Clans API and syncs their Discord profile.
+
+**How it works**
+1. An admin runs `!spawn_verify` to post a persistent verification panel.
+2. A member clicks **Verify Account** and fills in a modal with their player tag and in-game API token.
+3. The bot calls the Clash of Clans `verifytoken` endpoint to confirm the user actually owns the account.
+4. On success, it fetches the player profile, then assigns the verified role and sets the member's nickname to their in-game name.
+
+**Engineering details**
+- **Async architecture:** built on `discord.py` and `aiohttp` so API calls never block the bot.
+- **Discord UI components:** buttons and modals for a clean, no-command verification flow, plus help buttons that explain where to find the tag and token.
+- **Persistent views:** the panel uses `timeout=None` with fixed `custom_id`s, registered in `setup_hook`, so buttons keep working after a bot restart.
+- **Idempotent updates:** re-verifying doesn't duplicate roles. The bot detects whether the member is already verified, only needs a nickname refresh, or needs full setup.
+- **Input handling:** normalizes tags (uppercase, adds `#`), URL-encodes them for the API, and truncates names to Discord's 32-character nickname limit.
+- **Defensive error handling:** distinct handling for API failures (including 403 errors from an outdated IP whitelist), network errors, Discord permission errors (`Forbidden`, `HTTPException`), and unexpected exceptions, each with a clear ephemeral message and a log entry.
+- **Privacy-conscious UX:** all responses are ephemeral, so tags and tokens are never exposed in public channels.
+- **Fail-fast configuration:** the bot exits with a critical log if required environment variables are missing.
+- **Admin-only setup command:** protected with `has_permissions(administrator=True)`.
 
 ---
 
@@ -90,9 +92,10 @@ A standalone bot that manages server access and member verification using the of
 | Area | Technologies |
 |------|-------------|
 | Core Automation | Excel, VBA |
-| Discord Bot | Python, `discord.py`, `aiohttp` |
+| Discord Bot | Python 3, `discord.py`, `aiohttp`, `asyncio` |
 | Data & Analytics | Dynamic arrays, `XLOOKUP`, `COUNTIFS`, `Scripting.Dictionary` |
-| API & Web | REST APIs (Supercell, Discord), JSON payload construction, HTTP requests via `WinHttpRequest` and `curl.exe` |
+| APIs & Web | REST APIs (Supercell, Discord), JSON payloads, `WinHttpRequest`, `curl.exe`, webhooks |
+| Practices | Environment-based secrets, logging, idempotent operations, rate-limit handling |
 | Environment | Windows, Discord Developer Portal |
 
 ---
@@ -106,13 +109,62 @@ A standalone bot that manages server access and member verification using the of
 │   ├── CwlStrategyAssignment.bas # Bulk CWL strategy assignment tool
 │   ├── PublicReportPublisher.bas # Public report generator and Discord file uploader
 │   ├── DiscordNotifications.bas  # Batched Discord webhook notifications
-│   ├── DatabaseSync.bas          # Master database synchronization
+│   ├── DatabaseSync.bas          # Master database ETL synchronization
 │   └── CwlApiSync.bas            # Clan War League API data synchronization
 ├── bot/
-
 │   └── verify_bot.py             # Discord verification bot (Python)
 ├── .env.example                  # Template for required environment variables
 └── README.md
 ```
 
-LinkedIn: https://www.linkedin.com/in/maxim-kolosov-92b526406/
+---
+
+## Setup: Discord Bot
+
+**Requirements:** Python 3.9+, a Discord bot application, and a Clash of Clans API key (with your server's IP whitelisted).
+
+```bash
+pip install discord.py aiohttp
+```
+
+Create a `.env` file in the project root (never commit it):
+
+```env
+DISCORD_BOT_TOKEN=your_discord_bot_token
+COC_API_KEY=your_supercell_api_key
+VERIFIED_ROLE_ID=123456789012345678
+```
+
+Run the bot:
+
+```bash
+python bot/verify_bot.py
+```
+
+Then, in your server, run `!spawn_verify` as an administrator to post the verification panel. Make sure the bot's role sits **above** the verified role in your server's role hierarchy and has the *Manage Roles* and *Manage Nicknames* permissions.
+
+### Security
+This repository contains no hardcoded API keys or tokens. All credentials are loaded from environment variables, and `.env` is excluded from version control.
+
+---
+
+## Limitations
+
+This is a personal operations tool, not a production SaaS product.
+
+**Designed for:** small to medium online groups, Excel-based workflows, single-server Discord communities, one operator, and manual review supported by automation.
+
+**Not designed for:** multi-user concurrent editing of the workbook, cloud-scale or multi-server bot deployment, sensitive financial or personal data, or fully autonomous decision-making.
+
+---
+
+## What I Learned
+
+I iterated on this for several months based on real operational needs, not hypothetical ones.
+
+- **Make repetitive work repeatable.** If a task happens every week, it should run the same way every week.
+- **Design around change.** Rosters shift constantly, so the tool had to adapt without breaking.
+- **Separate internal from public.** Admin notes and working logic should never leak into shared output.
+- **Handle APIs carefully.** Rate limits, batching, IP whitelisting, and graceful failure matter more than raw speed.
+- **Build for the people using it.** A good tool people rely on daily beats a perfect one nobody opens.
+- **Write defensive code.** Handling the failure paths (bad input, network errors, permission issues) is what separates a script from a tool others can trust.
