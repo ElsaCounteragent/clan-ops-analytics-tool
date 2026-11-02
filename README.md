@@ -113,3 +113,5 @@ A standalone bot (`bot/verify_bot.py`) that verifies players against the officia
 │   └── verify_bot.py             # Discord verification bot (Python)
 ├── .env.example                  # Template for required environment variables
 └── README.md
+## Download
+Download the latest workbook from the [Releases page](https://github.com/ElsaCounteragent/clan-ops-analytics-tool/releases).
