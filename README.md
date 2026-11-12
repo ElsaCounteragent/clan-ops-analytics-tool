@@ -9,6 +9,8 @@ I built this to solve a real workflow problem: running a large, active Clash of 
 **Core focus:** process automation · VBA · Python (`asyncio`) · REST API integration · webhook messaging · data validation · environment-based configuration
 
 ---
+<img width="1311" height="412" alt="Screenshot 2026-11-12 192758" src="https://github.com/user-attachments/assets/511a813c-e09d-421b-845e-4273beb853df" />
+
 
 ## The Problem
 
@@ -51,6 +53,7 @@ The goal isn't to remove human judgment. It's to remove copy-paste, manual forma
 - `XLOOKUP` to match roster entries to historical records
 - `COUNTIFS` for participation and performance metrics
 - Rule-based logic that automatically flags members who meet qualification conditions across multiple events
+<img width="2115" height="1062" alt="Screenshot 2026-11-12 192741" src="https://github.com/user-attachments/assets/dae41f0d-133c-48f2-9ac2-127e0206b252" />
 
 ### 3. Public Report Generation (VBA)
 - Duplicates reporting sheets into a new workbook
@@ -84,7 +87,7 @@ A standalone bot (`bot/verify_bot.py`) that verifies players against the officia
 - **Fail-fast configuration:** The bot exits with a critical log if required environment variables are missing.
 
 ---
-
+<img width="1258" height="867" alt="Screenshot 2026-11-12 192819" src="https://github.com/user-attachments/assets/99cd5793-9cad-4773-b3d2-473f6111e482" />
 ## Technical Stack
 
 | Area | Technologies |
